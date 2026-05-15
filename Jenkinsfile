@@ -4,18 +4,21 @@ pipeline {
     agent any
 
     environment {
+        gitRepoURL = "https://github.com/prashanth0996/final_project-2026.git"
         gitBranchName = "${env.BRANCH_NAME}"
         ecrRegistry = "879381264703.dkr.ecr.ap-south-1.amazonaws.com"
         backendImage = "${ecrRegistry}/backend"
         frontendImage = "${ecrRegistry}/frontend"
         modelImage = "${ecrRegistry}/model"
+        snykOrg = "14141617-a2e0-4a4f-b558-dce1ea5cad2d"
+        SCANNER_HOME = tool('sonar-scanner')
     }
 
     stages {
         stage('Init Vars') {
             steps {
                 script {
-                    env.branchName = env.BRANCH_NAME.replace('/', '-')
+                    env.branchName = env.BRANCH_NAME.replaceAll('/', '-')
                     env.gitCommit = env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : 'latest'
                     env.dockerTag = "${env.branchName}-${env.gitCommit}"
                 }
@@ -24,7 +27,7 @@ pipeline {
 
         stage('Git Checkout') {
             steps {
-                gitCheckout("${gitRepoURL}", "refs/heads/${gitBranchName}", 'githubCred')
+                gitCheckout(gitRepoURL, "refs/heads/${gitBranchName}", 'githubCred')
             }
         }
 
@@ -70,6 +73,21 @@ pipeline {
                     steps {
                         dockerECRImagePush(modelImage, dockerTag, 'ap-south-1')
                     }
+                }
+            }
+        }
+
+        stage('Update Helm Values') {
+            steps {
+                dir('helm') {
+                    sh """
+                        sed -i 's|__BACKEND_IMAGE_REPOSITORY__|${backendImage}|g' values.yaml
+                        sed -i 's|__FRONTEND_IMAGE_REPOSITORY__|${frontendImage}|g' values.yaml
+                        sed -i 's|__MODEL_IMAGE_REPOSITORY__|${modelImage}|g' values.yaml
+                        sed -i 's|__BACKEND_IMAGE_TAG__|${dockerTag}|g' values.yaml
+                        sed -i 's|__FRONTEND_IMAGE_TAG__|${dockerTag}|g' values.yaml
+                        sed -i 's|__MODEL_IMAGE_TAG__|${dockerTag}|g' values.yaml
+                    """
                 }
             }
         }
