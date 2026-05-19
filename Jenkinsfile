@@ -10,7 +10,7 @@ pipeline {
         gitRepoURL = "https://github.com/prashanth0996/final_project-2026.git"
     }
     agent {
-        label 'agent'
+        label any
     }
     stages {
         stage('Git Checkout') {
