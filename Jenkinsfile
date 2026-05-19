@@ -6,30 +6,40 @@ pipeline {
     environment {
         ecrRegistry   = "971002455839.dkr.ecr.ap-south-1.amazonaws.com"
         frontendImage = "${ecrRegistry}/frontend"
-        gitCommit     = "${GIT_COMMIT[0..6]}"
-        BRANCH_NAME = sh(script: 'echo $BRANCH_NAME | sed "s#/#-#"', returnStdout: true
-        dockerTag     = "${BRANCH_NAME}-${gitCommit}-${env.BUILD_NUMBER}"
         gitRepoURL    = "https://github.com/prashanth0996/final_project-2026.git"
     }
 
     stages {
+        stage('Setup Environment') {
+            steps {
+                script {
+                    // Normalize branch name
+                    env.BRANCH_NAME = sh(script: 'echo $BRANCH_NAME | sed "s#/#-#"', returnStdout: true).trim()
+                    // Short commit hash
+                    env.gitCommit   = env.GIT_COMMIT.take(7)
+                    // Docker tag
+                    env.dockerTag   = "${env.BRANCH_NAME}-${env.gitCommit}-${env.BUILD_NUMBER}"
+                }
+            }
+        }
+
         stage('Git Checkout') {
             steps {
-                gitCheckout("${gitRepoURL}", "${BRANCH_NAME}", "githubCred")
+                gitCheckout("${env.gitRepoURL}", "${env.BRANCH_NAME}", "githubCred")
             }
         }
 
         stage('Docker Build Frontend') {
             steps {
                 dir('frontend') {
-                    dockerImageBuild("${frontendImage}", "${dockerTag}")
+                    dockerImageBuild("${env.frontendImage}", "${env.dockerTag}")
                 }
             }
         }
 
         stage('Docker Push Frontend') {
             steps {
-                dockerECRImagePush("${frontendImage}", "${dockerTag}", "ap-south-1")
+                dockerECRImagePush("${env.frontendImage}", "${env.dockerTag}", "ap-south-1")
             }
         }
     }
