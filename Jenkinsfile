@@ -2,7 +2,7 @@
 
 pipeline {
     environment {
-        ecrRegistry = "070797855002.dkr.ecr.ap-south-1.amazonaws.com"
+        ecrRegistry = "971002455839.dkr.ecr.ap-south-1.amazonaws.com"
         frontendImage = "${ecrRegistry}/frontend"
         BRANCH_NAME = sh(script: 'echo $BRANCH_NAME | sed "s#/#-#"', returnStdout: true).trim()
         gitCommit = "${GIT_COMMIT[0..6]}"
@@ -20,6 +20,7 @@ pipeline {
         }
 
         stage('Docker Build') {
+            stages {
                 stage('Build Frontend') {
                     steps {
                         dir('frontend') {
@@ -27,6 +28,7 @@ pipeline {
                         }
                     }
                 }
+            }
         }
 
         // stage('Security Scans') {
@@ -70,11 +72,13 @@ pipeline {
         // }
 
         stage('Docker Push') {
+            stages {
                 stage('Push Frontend') {
                     steps {
                         dockerECRImagePush('$frontendImage', '$dockerTag', 'ap-south-1')
                     }
                 }
+            }
         }
     }
 }
