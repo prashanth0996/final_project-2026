@@ -1,6 +1,8 @@
 @Library('sharedlibrary')_
 
 pipeline {
+    agent any 
+    
     environment {
         ecrRegistry = "971002455839.dkr.ecr.ap-south-1.amazonaws.com"
         frontendImage = "${ecrRegistry}/frontend"
@@ -8,9 +10,6 @@ pipeline {
         gitCommit = "${GIT_COMMIT[0..6]}"
         dockerTag = "${BRANCH_NAME}-${gitCommit}-${env.BUILD_NUMBER}"
         gitRepoURL = "https://github.com/prashanth0996/final_project-2026.git"
-    }
-    agent {
-        label any
     }
     stages {
         stage('Git Checkout') {
