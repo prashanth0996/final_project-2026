@@ -13,11 +13,9 @@ pipeline {
         stage('Setup Environment') {
             steps {
                 script {
-                    // Normalize branch name
-                    env.BRANCH_NAME = sh(
-                        script: 'echo $BRANCH_NAME | sed "s#/#-#"',
-                        returnStdout: true
-                    ).trim()
+                    // Use Jenkins-provided BRANCH_NAME or default to "main"
+                    env.BRANCH_NAME = env.BRANCH_NAME?.trim() ?: "main"
+                    env.BRANCH_NAME = env.BRANCH_NAME.replaceAll("/", "-")
 
                     // Short commit hash
                     env.gitCommit   = env.GIT_COMMIT.take(7)
